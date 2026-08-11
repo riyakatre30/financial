@@ -205,37 +205,100 @@ st.sidebar.markdown(
     "<h2 style='font-size:18px;margin-bottom:3px;'>Financial Filters</h2>",
     unsafe_allow_html=True
 )
-st.sidebar.caption("Filter the customer portfolio to explore financial behaviour.")
+
+st.sidebar.caption(
+    "Filter the customer portfolio to explore financial behaviour."
+)
+
+# Hide selected-value chips from the CLOSED multiselect box
+st.sidebar.markdown("""
+<style>
+
+section[data-testid="stSidebar"] div[data-baseweb="select"] [data-baseweb="tag"] {
+    display: none !important;
+}
+
+/* Keep the dropdown clean */
+section[data-testid="stSidebar"] div[data-baseweb="select"] {
+    min-height: 42px;
+}
+
+/* Keep enough space for the dropdown arrow */
+section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
+    padding-right: 35px !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 
 def add_filter(label, column):
+
     if column not in df.columns:
         return None
-    values = sorted(df[column].dropna().astype(str).unique())
-    return st.sidebar.multiselect(label, values, default=list(values))
+
+    values = sorted(
+        df[column]
+        .dropna()
+        .astype(str)
+        .unique()
+    )
+
+    return st.sidebar.multiselect(
+        label,
+        values,
+        default=list(values),
+        placeholder="Select..."
+    )
+
 
 gender = add_filter("Gender", "Gender")
-employment = add_filter("Employment Type", "Employment_Type")
-occupation = add_filter("Occupation", "Occupation")
+
+employment = add_filter(
+    "Employment Type",
+    "Employment_Type"
+)
+
+occupation = add_filter(
+    "Occupation",
+    "Occupation"
+)
+
 
 filtered_df = df.copy()
 
+
 if gender:
-    filtered_df = filtered_df[filtered_df["Gender"].astype(str).isin(gender)]
+    filtered_df = filtered_df[
+        filtered_df["Gender"]
+        .astype(str)
+        .isin(gender)
+    ]
+
 
 if employment:
     filtered_df = filtered_df[
-        filtered_df["Employment_Type"].astype(str).isin(employment)
+        filtered_df["Employment_Type"]
+        .astype(str)
+        .isin(employment)
     ]
+
 
 if occupation:
     filtered_df = filtered_df[
-        filtered_df["Occupation"].astype(str).isin(occupation)
+        filtered_df["Occupation"]
+        .astype(str)
+        .isin(occupation)
     ]
 
-if filtered_df.empty:
-    st.warning("No customers match the selected filters.")
-    st.stop()
 
+if filtered_df.empty:
+
+    st.warning(
+        "No customers match the selected filters."
+    )
+
+    st.stop()
 
 # =========================================================
 # HEADER
