@@ -27,7 +27,7 @@ st.write(
 # LOAD DATA
 # --------------------------------------------------
 
-df = pd.read_excel("../Datasets/Credir_Card_Bank.xlsx")
+df = pd.read_excel("Credir_Card_Bank.xlsx")
 
 # --------------------------------------------------
 # CALCULATED COLUMNS
