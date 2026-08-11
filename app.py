@@ -201,228 +201,42 @@ df["Investment_Percentage"] = (
 # =========================================================
 # FILTERS
 # =========================================================
-
 st.sidebar.markdown(
-    """
-    <div style="
-        font-family: 'DM Sans', sans-serif;
-        font-size:18px;
-        font-weight:600;
-        color:#eef3f5;
-        margin-bottom:4px;
-    ">
-        Financial Filters
-    </div>
-    """,
+    "<h2 style='font-size:18px;margin-bottom:3px;'>Financial Filters</h2>",
     unsafe_allow_html=True
 )
-
-st.sidebar.caption(
-    "Filter the customer portfolio to explore financial behaviour."
-)
-
-
-# ==================================================
-# MULTISELECT UI FIX
-# ==================================================
-
-st.sidebar.markdown(
-    """
-    <style>
-
-    /* ----------------------------------------------
-       IMPORTANT:
-       Do NOT use [class*="css"] here.
-       It breaks Streamlit internal icons.
-    ---------------------------------------------- */
-
-    /* Keep Streamlit icons as icons */
-    .material-icons,
-    .material-symbols-rounded,
-    .material-symbols-outlined,
-    [data-testid="stIconMaterial"] {
-        font-family:
-            "Material Symbols Rounded",
-            "Material Symbols Outlined",
-            "Material Icons" !important;
-
-        font-weight: normal !important;
-        font-style: normal !important;
-        font-size: 20px !important;
-        line-height: 1 !important;
-        letter-spacing: normal !important;
-        text-transform: none !important;
-        white-space: nowrap !important;
-        direction: ltr !important;
-    }
-
-
-    /* ----------------------------------------------
-       HIDE SELECTED RED CHIPS
-       Female / Male / Salaried etc.
-       will NOT be displayed in the closed box.
-    ---------------------------------------------- */
-
-    section[data-testid="stSidebar"]
-    div[data-baseweb="select"]
-    [data-baseweb="tag"] {
-        display: none !important;
-    }
-
-
-    /* ----------------------------------------------
-       CLEAN MULTISELECT BOX
-    ---------------------------------------------- */
-
-    section[data-testid="stSidebar"]
-    div[data-baseweb="select"] {
-        min-height: 42px !important;
-        background: #191e28 !important;
-        border: 1px solid #343b46 !important;
-        border-radius: 8px !important;
-        box-shadow: none !important;
-    }
-
-
-    /* ----------------------------------------------
-       HIDE SELECTED TEXT FROM INPUT
-    ---------------------------------------------- */
-
-    section[data-testid="stSidebar"]
-    div[data-baseweb="select"] input {
-        color: transparent !important;
-        caret-color: transparent !important;
-        width: 5px !important;
-        min-width: 5px !important;
-    }
-
-
-    /* ----------------------------------------------
-       DROPDOWN MENU
-    ---------------------------------------------- */
-
-    div[data-baseweb="menu"] {
-        background: #191e28 !important;
-        border: 1px solid #343b46 !important;
-        border-radius: 8px !important;
-    }
-
-
-    /* Dropdown options */
-    div[data-baseweb="menu"] li {
-        color: #e8edf2 !important;
-        font-family: 'DM Sans', sans-serif !important;
-    }
-
-
-    /* Hover */
-    div[data-baseweb="menu"] li:hover {
-        background: #29313c !important;
-    }
-
-
-    /* ----------------------------------------------
-       SIDEBAR LABEL
-    ---------------------------------------------- */
-
-    section[data-testid="stSidebar"] label {
-        font-family: 'DM Sans', sans-serif;
-        color: #dfe6eb;
-    }
-
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-
-# ==================================================
-# FILTER FUNCTION
-# ==================================================
+st.sidebar.caption("Filter the customer portfolio to explore financial behaviour.")
 
 def add_filter(label, column):
-
     if column not in df.columns:
-        return []
+        return None
+    values = sorted(df[column].dropna().astype(str).unique())
+    return st.sidebar.multiselect(label, values, default=list(values))
 
-    values = sorted(
-        df[column]
-        .dropna()
-        .astype(str)
-        .unique()
-        .tolist()
-    )
-
-    return st.sidebar.multiselect(
-        label,
-        options=values,
-        default=values,
-        placeholder="Select..."
-    )
-
-
-# ==================================================
-# FILTERS
-# ==================================================
-
-gender = add_filter(
-    "Gender",
-    "Gender"
-)
-
-employment = add_filter(
-    "Employment Type",
-    "Employment_Type"
-)
-
-occupation = add_filter(
-    "Occupation",
-    "Occupation"
-)
-
-
-# ==================================================
-# APPLY FILTERS
-# ==================================================
+gender = add_filter("Gender", "Gender")
+employment = add_filter("Employment Type", "Employment_Type")
+occupation = add_filter("Occupation", "Occupation")
 
 filtered_df = df.copy()
 
-
 if gender:
-    filtered_df = filtered_df[
-        filtered_df["Gender"]
-        .astype(str)
-        .isin(gender)
-    ]
-
+    filtered_df = filtered_df[filtered_df["Gender"].astype(str).isin(gender)]
 
 if employment:
     filtered_df = filtered_df[
-        filtered_df["Employment_Type"]
-        .astype(str)
-        .isin(employment)
+        filtered_df["Employment_Type"].astype(str).isin(employment)
     ]
-
 
 if occupation:
     filtered_df = filtered_df[
-        filtered_df["Occupation"]
-        .astype(str)
-        .isin(occupation)
+        filtered_df["Occupation"].astype(str).isin(occupation)
     ]
 
-
-# ==================================================
-# EMPTY DATA CHECK
-# ==================================================
-
 if filtered_df.empty:
-
-    st.warning(
-        "No customers match the selected filters."
-    )
-
+    st.warning("No customers match the selected filters.")
     st.stop()
+
+
 # =========================================================
 # HEADER
 # =========================================================
@@ -556,58 +370,56 @@ if view == "Financial Overview":
 
     st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
 
-  
+    # Income vs Savings
+    c1, c2, c3 = st.columns(3, gap="medium")
 
-# Income vs Savings
-c1, c2, c3 = st.columns(3, gap="medium")
+    with c1:
+        st.markdown(
+            '<div class="chart-title">Income vs Savings</div>'
+            '<div class="chart-note">Savings behaviour relative to monthly income</div>',
+            unsafe_allow_html=True
+        )
 
-with c1:
-    st.markdown(
-        '<div class="chart-title">Income vs Savings</div>'
-        '<div class="chart-note">Savings behaviour relative to monthly income</div>',
-        unsafe_allow_html=True
-    )
+        fig = px.scatter(
+            filtered_df,
+            x="Monthly_Income",
+            y="Savings_Balance",
+            color="Employment_Type",
+            hover_name="Customer_ID",
+            hover_data={
+                "Monthly_Income": ":,.0f",
+                "Savings_Balance": ":,.0f",
+                "Savings_Percentage": ":.1f",
+                "Employment_Type": True
+            }
+        )
+        fig.update_traces(marker=dict(size=6, opacity=.72))
+        dark_chart(fig)
+        st.plotly_chart(fig, use_container_width=True, config=CONFIG)
 
-    fig = px.scatter(
-        filtered_df,
-        x="Monthly_Income",
-        y="Savings_Balance",
-        color="Employment_Type",
-        hover_name="Customer_ID",
-        hover_data={
-            "Monthly_Income": ":,.0f",
-            "Savings_Balance": ":,.0f",
-            "Savings_Percentage": ":.1f",
-            "Employment_Type": True
-        }
-    )
-    fig.update_traces(marker=dict(size=6, opacity=.72))
-    dark_chart(fig)
-    st.plotly_chart(fig, use_container_width=True, config=CONFIG)
+    # Income vs Investments
+    with c2:
+        st.markdown(
+            '<div class="chart-title">Income vs Investments</div>'
+            '<div class="chart-note">Investment value compared with earning capacity</div>',
+            unsafe_allow_html=True
+        )
 
-# Income vs Investments
-with c2:
-    st.markdown(
-        '<div class="chart-title">Income vs Investments</div>'
-        '<div class="chart-note">Investment value compared with earning capacity</div>',
-        unsafe_allow_html=True
-    )
-
-    fig = px.scatter(
-        filtered_df,
-        x="Monthly_Income",
-        y="Investment_Value",
-        color="Occupation",
-        hover_name="Customer_ID",
-        hover_data={
-            "Monthly_Income": ":,.0f",
-            "Investment_Value": ":,.0f",
-            "Investment_Percentage": ":.1f"
-        }
-    )
-    fig.update_traces(marker=dict(size=6, opacity=.65))
-    dark_chart(fig)
-    st.plotly_chart(fig, use_container_width=True, config=CONFIG)
+        fig = px.scatter(
+            filtered_df,
+            x="Monthly_Income",
+            y="Investment_Value",
+            color="Occupation",
+            hover_name="Customer_ID",
+            hover_data={
+                "Monthly_Income": ":,.0f",
+                "Investment_Value": ":,.0f",
+                "Investment_Percentage": ":.1f"
+            }
+        )
+        fig.update_traces(marker=dict(size=6, opacity=.65))
+        dark_chart(fig)
+        st.plotly_chart(fig, use_container_width=True, config=CONFIG)
 
     # Loan Portfolio
     with c3:
