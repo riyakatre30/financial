@@ -559,8 +559,6 @@ if view == "Financial Overview":
   
 
 # Income vs Savings
-
-```
 c1, c2, c3 = st.columns(3, gap="medium")
 
 with c1:
