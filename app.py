@@ -556,8 +556,11 @@ if view == "Financial Overview":
 
     st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
 
-   # Income vs Savings
+  
 
+# Income vs Savings
+
+```
 c1, c2, c3 = st.columns(3, gap="medium")
 
 with c1:
@@ -580,52 +583,12 @@ with c1:
             "Employment_Type": True
         }
     )
-
-    fig.update_traces(
-        marker=dict(
-            size=6,
-            opacity=0.72
-        )
-    )
-
-    # Legend on RIGHT side
-    fig.update_layout(
-        legend=dict(
-            orientation="v",
-            x=1.02,
-            y=0.5,
-            xanchor="left",
-            yanchor="middle",
-            bgcolor="rgba(20,25,32,0.95)",
-            bordercolor="#343b46",
-            borderwidth=1,
-            font=dict(
-                family="DM Sans",
-                size=9,
-                color="#cbd3d9"
-            )
-        ),
-        margin=dict(
-            l=50,
-            r=130,
-            t=25,
-            b=45
-        )
-    )
-
+    fig.update_traces(marker=dict(size=6, opacity=.72))
     dark_chart(fig)
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config=CONFIG
-    )
-
+    st.plotly_chart(fig, use_container_width=True, config=CONFIG)
 
 # Income vs Investments
-
 with c2:
-
     st.markdown(
         '<div class="chart-title">Income vs Investments</div>'
         '<div class="chart-note">Investment value compared with earning capacity</div>',
@@ -644,46 +607,9 @@ with c2:
             "Investment_Percentage": ":.1f"
         }
     )
-
-    fig.update_traces(
-        marker=dict(
-            size=6,
-            opacity=0.65
-        )
-    )
-
-    # Legend on RIGHT side
-    fig.update_layout(
-        legend=dict(
-            orientation="v",
-            x=1.02,
-            y=0.5,
-            xanchor="left",
-            yanchor="middle",
-            bgcolor="rgba(20,25,32,0.95)",
-            bordercolor="#343b46",
-            borderwidth=1,
-            font=dict(
-                family="DM Sans",
-                size=8,
-                color="#cbd3d9"
-            )
-        ),
-        margin=dict(
-            l=50,
-            r=145,
-            t=25,
-            b=45
-        )
-    )
-
+    fig.update_traces(marker=dict(size=6, opacity=.65))
     dark_chart(fig)
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config=CONFIG
-    )
+    st.plotly_chart(fig, use_container_width=True, config=CONFIG)
 
     # Loan Portfolio
     with c3:
