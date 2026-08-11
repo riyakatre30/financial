@@ -225,243 +225,8 @@ st.sidebar.caption(
 )
 
 
-# --------------------------------------------------
-# FIX STREAMLIT ICON + MULTISELECT APPEARANCE
-# --------------------------------------------------
-
-st.sidebar.markdown(
-    """
-    <style>
-
-    /* Fix Streamlit Material Icons */
-    .material-icons,
-    .material-symbols-rounded,
-    .material-symbols-outlined,
-    [data-testid="stIconMaterial"] {
-        font-family:
-            "Material Symbols Rounded",
-            "Material Symbols Outlined",
-            "Material Icons" !important;
-
-        font-weight: normal !important;
-        font-style: normal !important;
-        font-size: 20px !important;
-        line-height: 1 !important;
-        letter-spacing: normal !important;
-        text-transform: none !important;
-        white-space: nowrap !important;
-        word-wrap: normal !important;
-        direction: ltr !important;
-    }
-
-
-    /* Hide selected red chips */
-    section[data-testid="stSidebar"]
-    div[data-baseweb="select"]
-    [data-baseweb="tag"] {
-        display: none !important;
-    }
-
-
-    /* Clean multiselect box */
-    section[data-testid="stSidebar"]
-    div[data-baseweb="select"] {
-        min-height: 42px !important;
-        background: #191e28 !important;
-        border: 1px solid #343b46 !important;
-        border-radius: 8px !important;
-    }
-
-
-    /* Keep input clean */
-    section[data-testid="stSidebar"]
-    div[data-baseweb="select"] input {
-        color: #e8edf2 !important;
-    }
-
-
-    /* Dropdown menu */
-    div[data-baseweb="menu"] {
-        background: #191e28 !important;
-    }
-
-
-    /* Dropdown options */
-    div[data-baseweb="menu"] li {
-        color: #e8edf2 !important;
-    }
-
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-
-def add_filter(label, column):
-
-    if column not in df.columns:
-        return []
-
-    values = sorted(
-        df[column]
-        .dropna()
-        .astype(str)
-        .unique()
-        .tolist()
-    )
-
-    return st.sidebar.multiselect(
-        label,
-        options=values,
-        default=values,
-        placeholder="Select..."
-    )
-
-
-# --------------------------------------------------
-# FILTERS
-# --------------------------------------------------
-
 # ==================================================
-# FINANCIAL FILTERS
-# ==================================================
-
-st.sidebar.markdown(
-    """
-    <div style="
-        font-family: 'DM Sans', sans-serif;
-        font-size:18px;
-        font-weight:600;
-        color:#eef3f5;
-        margin-bottom:4px;
-    ">
-        Financial Filters
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.sidebar.caption(
-    "Filter the customer portfolio to explore financial behaviour."
-)
-
-
-# ==================================================
-# MULTISELECT UI FIX
-# ==================================================
-
-st.sidebar.markdown(
-    """
-    <style>
-
-    /* ----------------------------------------------
-       IMPORTANT:
-       Do NOT use [class*="css"] here.
-       It breaks Streamlit internal icons.
-    ---------------------------------------------- */
-
-    /* Keep Streamlit icons as icons */
-    .material-icons,
-    .material-symbols-rounded,
-    .material-symbols-outlined,
-    [data-testid="stIconMaterial"] {
-        font-family:
-            "Material Symbols Rounded",
-            "Material Symbols Outlined",
-            "Material Icons" !important;
-
-        font-weight: normal !important;
-        font-style: normal !important;
-        font-size: 20px !important;
-        line-height: 1 !important;
-        letter-spacing: normal !important;
-        text-transform: none !important;
-        white-space: nowrap !important;
-        direction: ltr !important;
-    }
-
-
-    /* ----------------------------------------------
-       HIDE SELECTED RED CHIPS
-       Female / Male / Salaried etc.
-       will NOT be displayed in the closed box.
-    ---------------------------------------------- */
-
-    section[data-testid="stSidebar"]
-    div[data-baseweb="select"]
-    [data-baseweb="tag"] {
-        display: none !important;
-    }
-
-
-    /* ----------------------------------------------
-       CLEAN MULTISELECT BOX
-    ---------------------------------------------- */
-
-    section[data-testid="stSidebar"]
-    div[data-baseweb="select"] {
-        min-height: 42px !important;
-        background: #191e28 !important;
-        border: 1px solid #343b46 !important;
-        border-radius: 8px !important;
-        box-shadow: none !important;
-    }
-
-
-    /* ----------------------------------------------
-       HIDE SELECTED TEXT FROM INPUT
-    ---------------------------------------------- */
-
-    section[data-testid="stSidebar"]
-    div[data-baseweb="select"] input {
-        color: transparent !important;
-        caret-color: transparent !important;
-        width: 5px !important;
-        min-width: 5px !important;
-    }
-
-
-    /* ----------------------------------------------
-       DROPDOWN MENU
-    ---------------------------------------------- */
-
-    div[data-baseweb="menu"] {
-        background: #191e28 !important;
-        border: 1px solid #343b46 !important;
-        border-radius: 8px !important;
-    }
-
-
-    /* Dropdown options */
-    div[data-baseweb="menu"] li {
-        color: #e8edf2 !important;
-        font-family: 'DM Sans', sans-serif !important;
-    }
-
-
-    /* Hover */
-    div[data-baseweb="menu"] li:hover {
-        background: #29313c !important;
-    }
-
-
-    /* ----------------------------------------------
-       SIDEBAR LABEL
-    ---------------------------------------------- */
-
-    section[data-testid="stSidebar"] label {
-        font-family: 'DM Sans', sans-serif;
-        color: #dfe6eb;
-    }
-
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-
-# ==================================================
-# FILTER FUNCTION
+# DROPDOWN MULTI-SELECT FUNCTION
 # ==================================================
 
 def add_filter(label, column):
@@ -477,12 +242,46 @@ def add_filter(label, column):
         .tolist()
     )
 
-    return st.sidebar.multiselect(
+    # Store selected values
+    state_key = f"selected_{column}"
+
+    if state_key not in st.session_state:
+        st.session_state[state_key] = values.copy()
+
+    # Clean dropdown button
+    with st.sidebar.popover(
         label,
-        options=values,
-        default=values,
-        placeholder="Select..."
-    )
+        use_container_width=True
+    ):
+
+        st.markdown(
+            f"""
+            <div style="
+                font-size:14px;
+                font-weight:600;
+                margin-bottom:10px;
+                color:#e8edf2;
+            ">
+                Select {label}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        selected = []
+
+        for i, value in enumerate(values):
+
+            if st.checkbox(
+                value,
+                value=value in st.session_state[state_key],
+                key=f"{column}_option_{i}"
+            ):
+                selected.append(value)
+
+        st.session_state[state_key] = selected
+
+    return st.session_state[state_key]
 
 
 # ==================================================
