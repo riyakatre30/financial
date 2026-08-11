@@ -556,7 +556,7 @@ if view == "Financial Overview":
 
     st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
 
-    # Income vs Savings
+   # Income vs Savings
 
 c1, c2, c3 = st.columns(3, gap="medium")
 
@@ -584,11 +584,11 @@ with c1:
     fig.update_traces(
         marker=dict(
             size=6,
-            opacity=.72
+            opacity=0.72
         )
     )
 
-    # Right-side dark legend
+    # Legend on RIGHT side
     fig.update_layout(
         legend=dict(
             orientation="v",
@@ -601,13 +601,13 @@ with c1:
             borderwidth=1,
             font=dict(
                 family="DM Sans",
-                size=10,
+                size=9,
                 color="#cbd3d9"
             )
         ),
         margin=dict(
             l=50,
-            r=125,
+            r=130,
             t=25,
             b=45
         )
@@ -623,6 +623,7 @@ with c1:
 
 
 # Income vs Investments
+
 with c2:
 
     st.markdown(
@@ -647,11 +648,11 @@ with c2:
     fig.update_traces(
         marker=dict(
             size=6,
-            opacity=.65
+            opacity=0.65
         )
     )
 
-    # Right-side dark legend
+    # Legend on RIGHT side
     fig.update_layout(
         legend=dict(
             orientation="v",
@@ -664,7 +665,7 @@ with c2:
             borderwidth=1,
             font=dict(
                 family="DM Sans",
-                size=9,
+                size=8,
                 color="#cbd3d9"
             )
         ),
