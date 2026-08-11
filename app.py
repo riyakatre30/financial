@@ -223,26 +223,28 @@ def add_filter(label, column):
         .unique()
     )
 
-    # Dropdown-style selector
-    with st.sidebar.popover(label, use_container_width=True):
+    selected = []
 
-        st.markdown(
-            f"**Select {label}**"
-        )
-
-        selected = []
+    # Clean expandable dropdown
+    with st.sidebar.expander(label, expanded=False):
 
         for value in values:
 
-            if st.checkbox(
+            checked = st.checkbox(
                 value,
                 value=True,
-                key=f"{column}_{value}"
-            ):
+                key=f"filter_{column}_{value}"
+            )
+
+            if checked:
                 selected.append(value)
 
-        return selected
+    return selected
 
+
+# -------------------------
+# FILTERS
+# -------------------------
 
 gender = add_filter(
     "Gender",
@@ -259,6 +261,10 @@ occupation = add_filter(
     "Occupation"
 )
 
+
+# -------------------------
+# APPLY FILTERS
+# -------------------------
 
 filtered_df = df.copy()
 
@@ -287,6 +293,10 @@ if occupation:
     ]
 
 
+# -------------------------
+# EMPTY DATA CHECK
+# -------------------------
+
 if filtered_df.empty:
 
     st.warning(
@@ -294,7 +304,6 @@ if filtered_df.empty:
     )
 
     st.stop()
-
 # =========================================================
 # HEADER
 # =========================================================
