@@ -201,9 +201,6 @@ df["Investment_Percentage"] = (
 # =========================================================
 # FILTERS
 # =========================================================
-# ==================================================
-# FINANCIAL FILTERS
-# ==================================================
 
 st.sidebar.markdown(
     """
@@ -226,7 +223,121 @@ st.sidebar.caption(
 
 
 # ==================================================
-# DROPDOWN MULTI-SELECT FUNCTION
+# MULTISELECT UI FIX
+# ==================================================
+
+st.sidebar.markdown(
+    """
+    <style>
+
+    /* ----------------------------------------------
+       IMPORTANT:
+       Do NOT use [class*="css"] here.
+       It breaks Streamlit internal icons.
+    ---------------------------------------------- */
+
+    /* Keep Streamlit icons as icons */
+    .material-icons,
+    .material-symbols-rounded,
+    .material-symbols-outlined,
+    [data-testid="stIconMaterial"] {
+        font-family:
+            "Material Symbols Rounded",
+            "Material Symbols Outlined",
+            "Material Icons" !important;
+
+        font-weight: normal !important;
+        font-style: normal !important;
+        font-size: 20px !important;
+        line-height: 1 !important;
+        letter-spacing: normal !important;
+        text-transform: none !important;
+        white-space: nowrap !important;
+        direction: ltr !important;
+    }
+
+
+    /* ----------------------------------------------
+       HIDE SELECTED RED CHIPS
+       Female / Male / Salaried etc.
+       will NOT be displayed in the closed box.
+    ---------------------------------------------- */
+
+    section[data-testid="stSidebar"]
+    div[data-baseweb="select"]
+    [data-baseweb="tag"] {
+        display: none !important;
+    }
+
+
+    /* ----------------------------------------------
+       CLEAN MULTISELECT BOX
+    ---------------------------------------------- */
+
+    section[data-testid="stSidebar"]
+    div[data-baseweb="select"] {
+        min-height: 42px !important;
+        background: #191e28 !important;
+        border: 1px solid #343b46 !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+    }
+
+
+    /* ----------------------------------------------
+       HIDE SELECTED TEXT FROM INPUT
+    ---------------------------------------------- */
+
+    section[data-testid="stSidebar"]
+    div[data-baseweb="select"] input {
+        color: transparent !important;
+        caret-color: transparent !important;
+        width: 5px !important;
+        min-width: 5px !important;
+    }
+
+
+    /* ----------------------------------------------
+       DROPDOWN MENU
+    ---------------------------------------------- */
+
+    div[data-baseweb="menu"] {
+        background: #191e28 !important;
+        border: 1px solid #343b46 !important;
+        border-radius: 8px !important;
+    }
+
+
+    /* Dropdown options */
+    div[data-baseweb="menu"] li {
+        color: #e8edf2 !important;
+        font-family: 'DM Sans', sans-serif !important;
+    }
+
+
+    /* Hover */
+    div[data-baseweb="menu"] li:hover {
+        background: #29313c !important;
+    }
+
+
+    /* ----------------------------------------------
+       SIDEBAR LABEL
+    ---------------------------------------------- */
+
+    section[data-testid="stSidebar"] label {
+        font-family: 'DM Sans', sans-serif;
+        color: #dfe6eb;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# ==================================================
+# FILTER FUNCTION
 # ==================================================
 
 def add_filter(label, column):
@@ -242,46 +353,12 @@ def add_filter(label, column):
         .tolist()
     )
 
-    # Store selected values
-    state_key = f"selected_{column}"
-
-    if state_key not in st.session_state:
-        st.session_state[state_key] = values.copy()
-
-    # Clean dropdown button
-    with st.sidebar.popover(
+    return st.sidebar.multiselect(
         label,
-        use_container_width=True
-    ):
-
-        st.markdown(
-            f"""
-            <div style="
-                font-size:14px;
-                font-weight:600;
-                margin-bottom:10px;
-                color:#e8edf2;
-            ">
-                Select {label}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        selected = []
-
-        for i, value in enumerate(values):
-
-            if st.checkbox(
-                value,
-                value=value in st.session_state[state_key],
-                key=f"{column}_option_{i}"
-            ):
-                selected.append(value)
-
-        st.session_state[state_key] = selected
-
-    return st.session_state[state_key]
+        options=values,
+        default=values,
+        placeholder="Select..."
+    )
 
 
 # ==================================================
