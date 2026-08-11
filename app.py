@@ -202,7 +202,16 @@ df["Investment_Percentage"] = (
 # FILTERS
 # =========================================================
 st.sidebar.markdown(
-    "<h2 style='font-size:18px;margin-bottom:3px;'>Financial Filters</h2>",
+    """
+    <h2 style="
+        font-size:18px;
+        margin-bottom:3px;
+        color:#eef3f5;
+        font-family:DM Sans,sans-serif;
+    ">
+        Financial Filters
+    </h2>
+    """,
     unsafe_allow_html=True
 )
 
@@ -221,19 +230,20 @@ def add_filter(label, column):
         .dropna()
         .astype(str)
         .unique()
+        .tolist()
     )
 
     selected = []
 
-    # Clean expandable dropdown
+    # Clean dropdown / expandable filter
     with st.sidebar.expander(label, expanded=False):
 
-        for value in values:
+        for i, value in enumerate(values):
 
             checked = st.checkbox(
                 value,
                 value=True,
-                key=f"filter_{column}_{value}"
+                key=f"{column}_filter_{i}"
             )
 
             if checked:
@@ -242,9 +252,9 @@ def add_filter(label, column):
     return selected
 
 
-# -------------------------
-# FILTERS
-# -------------------------
+# -----------------------------
+# FINANCIAL FILTERS
+# -----------------------------
 
 gender = add_filter(
     "Gender",
@@ -262,9 +272,9 @@ occupation = add_filter(
 )
 
 
-# -------------------------
+# -----------------------------
 # APPLY FILTERS
-# -------------------------
+# -----------------------------
 
 filtered_df = df.copy()
 
@@ -293,9 +303,9 @@ if occupation:
     ]
 
 
-# -------------------------
+# -----------------------------
 # EMPTY DATA CHECK
-# -------------------------
+# -----------------------------
 
 if filtered_df.empty:
 
