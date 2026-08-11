@@ -210,32 +210,11 @@ st.sidebar.caption(
     "Filter the customer portfolio to explore financial behaviour."
 )
 
-# Hide selected-value chips from the CLOSED multiselect box
-st.sidebar.markdown("""
-<style>
-
-section[data-testid="stSidebar"] div[data-baseweb="select"] [data-baseweb="tag"] {
-    display: none !important;
-}
-
-/* Keep the dropdown clean */
-section[data-testid="stSidebar"] div[data-baseweb="select"] {
-    min-height: 42px;
-}
-
-/* Keep enough space for the dropdown arrow */
-section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
-    padding-right: 35px !important;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
 
 def add_filter(label, column):
 
     if column not in df.columns:
-        return None
+        return []
 
     values = sorted(
         df[column]
@@ -244,15 +223,31 @@ def add_filter(label, column):
         .unique()
     )
 
-    return st.sidebar.multiselect(
-        label,
-        values,
-        default=list(values),
-        placeholder="Select..."
-    )
+    # Dropdown-style selector
+    with st.sidebar.popover(label, use_container_width=True):
+
+        st.markdown(
+            f"**Select {label}**"
+        )
+
+        selected = []
+
+        for value in values:
+
+            if st.checkbox(
+                value,
+                value=True,
+                key=f"{column}_{value}"
+            ):
+                selected.append(value)
+
+        return selected
 
 
-gender = add_filter("Gender", "Gender")
+gender = add_filter(
+    "Gender",
+    "Gender"
+)
 
 employment = add_filter(
     "Employment Type",
