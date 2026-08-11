@@ -1,390 +1,720 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sb
 import plotly.express as px
-import plotly.graph_objects as go
+
+# --------------------------------------------------
+# PAGE CONFIG
+# --------------------------------------------------
 
 st.set_page_config(
     page_title="Financial Performance Analysis",
-    page_icon="💰",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ---------- STYLE ----------
+
+# --------------------------------------------------
+# PROFESSIONAL DASHBOARD STYLE
+# --------------------------------------------------
+
 st.markdown("""
 <style>
-    .main {background-color: #f5f7fb;}
-    .block-container {padding-top: 1.2rem; padding-bottom: 2rem;}
-    .dashboard-title {
-        font-size: 38px; font-weight: 800; color: #172033;
-        margin-bottom: 0px;
-    }
-    .dashboard-subtitle {color:#667085; font-size:16px; margin-top:0px;}
-    .section-title {
-        font-size: 22px; font-weight: 750; color:#172033;
-        margin-top: 12px; margin-bottom: 8px;
-    }
-    div[data-testid="stMetric"] {
-        background: white; border: 1px solid #e6eaf0;
-        padding: 14px 16px; border-radius: 14px;
-        box-shadow: 0 2px 8px rgba(20,30,50,.05);
-    }
-    .insight-box {
-        background:white; border-left:5px solid #4f46e5;
-        padding:14px 16px; border-radius:10px;
-        margin-bottom:10px; color:#344054;
-    }
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+.stApp {
+    background: #f4f2ee;
+}
+
+.block-container {
+    max-width: 1450px;
+    padding: 35px 50px 60px 50px;
+}
+
+html, body, [class*="css"] {
+    font-family: 'DM Sans', sans-serif;
+}
+
+h1 {
+    color: #1f2d2a !important;
+    font-size: 40px !important;
+    font-weight: 700 !important;
+    letter-spacing: -1px;
+}
+
+h2, h3 {
+    color: #263632 !important;
+    font-weight: 600 !important;
+}
+
+.subtitle {
+    color: #6d7773;
+    font-size: 14px;
+    margin-top: -8px;
+    margin-bottom: 25px;
+}
+
+.section-text {
+    color: #747d79;
+    font-size: 13px;
+    margin-top: -12px;
+    margin-bottom: 16px;
+}
+
+.kpi-card {
+    background: rgba(255,255,255,0.55);
+    border-left: 3px solid #506861;
+    border-bottom: 1px solid #d8d4cc;
+    padding: 16px 18px;
+    min-height: 100px;
+}
+
+.kpi-label {
+    color: #727a77;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    font-weight: 600;
+}
+
+.kpi-value {
+    color: #1f2d2a;
+    font-size: 24px;
+    font-weight: 700;
+    margin-top: 7px;
+}
+
+.kpi-note {
+    color: #949b98;
+    font-size: 10px;
+    margin-top: 3px;
+}
+
+.insight {
+    color: #59625f;
+    font-size: 12px;
+    border-top: 1px solid #d8d4cc;
+    border-bottom: 1px solid #d8d4cc;
+    padding: 11px 2px;
+    margin: 5px 0 18px 0;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #d8d4cc;
+    margin: 34px 0;
+}
+
+[data-testid="stSidebar"] {
+    background: #253330;
+}
+
+[data-testid="stSidebar"] * {
+    font-family: 'DM Sans', sans-serif;
+}
+
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] p {
+    color: #f2f1ed !important;
+}
+
+div[data-testid="stPlotlyChart"] {
+    margin-bottom: 4px;
+}
+
+.stDownloadButton button {
+    background: #293a36;
+    color: white;
+    border: 0;
+    border-radius: 7px;
+    font-weight: 600;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- DATA ----------
-@st.cache_data
-def load_data(uploaded_file):
-    if uploaded_file is not None:
-        data = pd.read_excel(uploaded_file)
-    else:
-        # Put the Excel file in the same folder as app.py
-        possible = ["Credir_Card_Bank.xlsx", "Credir_Card_Bank(4).xlsx"]
-        data = None
-        for f in possible:
-            try:
-                data = pd.read_excel(f)
-                break
-            except Exception:
-                pass
-        if data is None:
-            return None
+# --------------------------------------------------
+# TITLE
+# --------------------------------------------------
 
-    data.columns = data.columns.str.strip()
-    numeric_cols = [
-        "Age","Monthly_Income","Annual_Income","Credit_Score",
-        "Years_With_Bank","Existing_Credit_Cards","Existing_Credit_Limit",
-        "Loan_Count","EMI_Per_Month","Debt_To_Income_Ratio",
-        "Savings_Balance","Investment_Value","Avg_Monthly_Transactions",
-        "Avg_Monthly_Spending","Credit_Utilization","Credit_History_Years",
-        "Missed_Payments","Late_Payment_Count","Number_of_Defaults","Credit_Limit"
-    ]
-    for c in numeric_cols:
-        if c in data.columns:
-            data[c] = pd.to_numeric(data[c], errors="coerce")
-
-    # Age group only for financial segmentation
-    bins = [17,25,35,45,60,100]
-    labels = ["18-25","26-35","36-45","46-60","60+"]
-    data["Age_Group"] = pd.cut(data["Age"], bins=bins, labels=labels, include_lowest=True)
-
-    return data
-
-# ---------- SIDEBAR ----------
-st.sidebar.markdown("## 📊 Financial Filters")
-uploaded = st.sidebar.file_uploader("Upload Banking Excel File", type=["xlsx","xls"])
-data = load_data(uploaded)
-
-if data is None:
-    st.error("Excel file nahi mila. app.py ke same folder me Credir_Card_Bank.xlsx rakho ya sidebar se upload karo.")
-    st.stop()
-
-st.sidebar.caption(f"Dataset: {len(data):,} customers | {len(data.columns)} columns")
-
-def multiselect_filter(label, col):
-    options = sorted(data[col].dropna().astype(str).unique().tolist())
-    return st.sidebar.multiselect(label, options, default=options)
-
-gender = multiselect_filter("Gender", "Gender")
-employment = multiselect_filter("Employment Type", "Employment_Type")
-occupation = multiselect_filter("Occupation", "Occupation")
-residence = multiselect_filter("Residential Status", "Residential_Status")
-age_group = multiselect_filter("Age Group", "Age_Group")
-
-# income range
-income_min = float(data["Annual_Income"].min())
-income_max = float(data["Annual_Income"].max())
-income_range = st.sidebar.slider(
-    "Annual Income Range",
-    min_value=float(np.floor(income_min)),
-    max_value=float(np.ceil(income_max)),
-    value=(float(np.floor(income_min)), float(np.ceil(income_max))),
-    step=50000.0
-)
-
-filtered = data[
-    data["Gender"].astype(str).isin(gender) &
-    data["Employment_Type"].astype(str).isin(employment) &
-    data["Occupation"].astype(str).isin(occupation) &
-    data["Residential_Status"].astype(str).isin(residence) &
-    data["Age_Group"].astype(str).isin(age_group) &
-    data["Annual_Income"].between(income_range[0], income_range[1])
-].copy()
-
-# ---------- HELPERS ----------
-def money(v):
-    if pd.isna(v): return "₹0"
-    if abs(v) >= 1e7: return f"₹{v/1e7:.2f} Cr"
-    if abs(v) >= 1e5: return f"₹{v/1e5:.2f} L"
-    if abs(v) >= 1e3: return f"₹{v/1e3:.1f}K"
-    return f"₹{v:,.0f}"
-
-def pct(v):
-    return f"{v:.1f}%"
-
-# ---------- HEADER ----------
-st.markdown('<div class="dashboard-title">💰 Financial Performance Analysis</div>', unsafe_allow_html=True)
+st.markdown("# Financial Performance Analysis")
 st.markdown(
-    '<div class="dashboard-subtitle">Income • Savings • Investments • EMI • Debt • Credit • Loans | Interactive Banking Dashboard</div>',
+    '<div class="subtitle">Income, savings, investments, repayment burden, '
+    'credit capacity and loan portfolio analysis</div>',
     unsafe_allow_html=True
 )
-st.divider()
 
-if filtered.empty:
-    st.warning("Selected filters ke according koi customer nahi mila. Filters thode broad karo.")
-    st.stop()
+# --------------------------------------------------
+# LOAD DATA
+# --------------------------------------------------
 
-# ---------- KPI CARDS ----------
-st.markdown('<div class="section-title">Executive Financial KPIs</div>', unsafe_allow_html=True)
-c1,c2,c3,c4 = st.columns(4)
-c5,c6,c7,c8 = st.columns(4)
+df = pd.read_excel("../Datasets/Credir_Card_Bank.xlsx")
 
-c1.metric("Customers", f"{len(filtered):,}")
-c2.metric("Avg Annual Income", money(filtered["Annual_Income"].mean()))
-c3.metric("Avg Savings", money(filtered["Savings_Balance"].mean()))
-c4.metric("Avg Investments", money(filtered["Investment_Value"].mean()))
-c5.metric("Avg EMI / Month", money(filtered["EMI_Per_Month"].mean()))
-c6.metric("Avg DTI", pct(filtered["Debt_To_Income_Ratio"].mean()*100))
-c7.metric("Avg Credit Utilization", pct(filtered["Credit_Utilization"].mean()))
-c8.metric("Total Loan Accounts", f"{int(filtered['Loan_Count'].sum()):,}")
+# --------------------------------------------------
+# CALCULATED COLUMNS
+# --------------------------------------------------
 
-# ---------- TASK 1 & 2 ----------
-st.markdown('<div class="section-title">1 & 2. Income vs Savings / Investments</div>', unsafe_allow_html=True)
-a,b = st.columns(2)
+df["Savings_Percentage"] = (
+    df["Savings_Balance"] /
+    df["Monthly_Income"]
+) * 100
 
-with a:
+df["Investment_Percentage"] = (
+    df["Investment_Value"] /
+    df["Monthly_Income"]
+) * 100
+
+
+# ==================================================
+# SIDEBAR FILTERS
+# ==================================================
+
+st.sidebar.markdown(
+    "<h2 style='font-size:20px;margin-bottom:5px;'>Analysis Filters</h2>",
+    unsafe_allow_html=True
+)
+st.sidebar.caption("Select segments to update the complete financial analysis.")
+
+# Gender
+gender = st.sidebar.multiselect(
+    "Gender",
+    options=df["Gender"].unique(),
+    default=df["Gender"].unique()
+)
+
+# Employment
+employment = st.sidebar.multiselect(
+    "Employment Type",
+    options=df["Employment_Type"].unique(),
+    default=df["Employment_Type"].unique()
+)
+
+# Occupation
+occupation = st.sidebar.multiselect(
+    "Occupation",
+    options=df["Occupation"].unique(),
+    default=df["Occupation"].unique()
+)
+
+# Residential Status
+residential = st.sidebar.multiselect(
+    "Residential Status",
+    options=df["Residential_Status"].unique(),
+    default=df["Residential_Status"].unique()
+)
+
+# Apply filters
+filtered_df = df[
+    (df["Gender"].isin(gender)) &
+    (df["Employment_Type"].isin(employment)) &
+    (df["Occupation"].isin(occupation)) &
+    (df["Residential_Status"].isin(residential))
+]
+
+# ==================================================
+# KPI CARDS — ONLY CORE FINANCIAL KPIs
+# ==================================================
+
+st.subheader("Financial Overview")
+
+kpi_cards = [
+    ("Customers", f"{filtered_df['Customer_ID'].nunique():,}", "Customer base"),
+    ("Avg Monthly Income", f"₹{filtered_df['Monthly_Income'].mean():,.0f}", "Income"),
+    ("Avg Savings", f"₹{filtered_df['Savings_Balance'].mean():,.0f}", "Savings balance"),
+    ("Avg Investment", f"₹{filtered_df['Investment_Value'].mean():,.0f}", "Investment value"),
+    ("Avg EMI", f"₹{filtered_df['EMI_Per_Month'].mean():,.0f}", "Monthly repayment")
+]
+
+cols = st.columns(5, gap="medium")
+
+for col, (label, value, note) in zip(cols, kpi_cards):
+    with col:
+        st.markdown(
+            f"""
+            <div class="kpi-card">
+                <div class="kpi-label">{label}</div>
+                <div class="kpi-value">{value}</div>
+                <div class="kpi-note">{note}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+st.markdown(
+    f'<div class="insight">Showing <b>{len(filtered_df):,}</b> customers '
+    f'after applying the selected filters.</div>',
+    unsafe_allow_html=True
+)
+
+
+# --------------------------------------------------
+# INTERACTIVE CHART STYLE
+# --------------------------------------------------
+
+def chart_style(fig, height=390):
+    fig.update_layout(
+        height=height,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="DM Sans", size=11, color="#505a56"),
+        title=dict(font=dict(size=16, color="#263632"), x=0),
+        margin=dict(l=55, r=25, t=58, b=50),
+        hoverlabel=dict(
+            bgcolor="#253330",
+            font=dict(family="DM Sans", color="white")
+        ),
+        legend=dict(
+            font=dict(size=10),
+            bgcolor="rgba(0,0,0,0)"
+        )
+    )
+    fig.update_xaxes(
+        showgrid=True, gridcolor="#ddd9d1",
+        zeroline=False, linecolor="#c7c2b9"
+    )
+    fig.update_yaxes(
+        showgrid=True, gridcolor="#ddd9d1",
+        zeroline=False, linecolor="#c7c2b9"
+    )
+    return fig
+
+PLOTLY_CONFIG = {
+    "displaylogo": False,
+    "scrollZoom": True,
+    "modeBarButtonsToRemove": ["lasso2d", "select2d"]
+}
+
+st.markdown("---")
+
+# ==================================================
+# 1. INCOME VS SAVINGS
+# ==================================================
+
+st.header("01  Income vs Savings Analysis")
+st.markdown(
+    '<div class="section-text">Understand the relationship between monthly income and savings behaviour.</div>',
+    unsafe_allow_html=True
+)
+
+col1, col2 = st.columns(2, gap="large")
+
+with col1:
     fig = px.scatter(
-        filtered, x="Annual_Income", y="Savings_Balance",
-        color="Employment_Type", size="Savings_Balance",
-        hover_data=["Customer_ID","Occupation","Debt_To_Income_Ratio"],
+        filtered_df,
+        x="Monthly_Income",
+        y="Savings_Balance",
+        color="Employment_Type",
+        hover_name="Customer_ID",
+        hover_data=["Annual_Income", "Savings_Percentage"],
         trendline="ols",
-        labels={"Annual_Income":"Annual Income (₹)", "Savings_Balance":"Savings Balance (₹)"},
         title="Income vs Savings"
     )
-    fig.update_layout(height=420, legend_title="Employment")
-    st.plotly_chart(fig, use_container_width=True)
+    fig.update_traces(marker=dict(size=7, opacity=0.65))
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
-with b:
+with col2:
+    savings_emp = (
+        filtered_df
+        .groupby("Employment_Type")[["Annual_Income", "Savings_Balance"]]
+        .mean()
+        .round(2)
+    )
+
+    fig = px.bar(
+        savings_emp.reset_index(),
+        x="Employment_Type",
+        y=["Annual_Income", "Savings_Balance"],
+        barmode="group",
+        title="Employment-wise Income & Savings"
+    )
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+st.markdown("---")
+
+# ==================================================
+# 2. INCOME VS INVESTMENTS
+# ==================================================
+
+st.header("02  Income vs Investments")
+st.markdown(
+    '<div class="section-text">Compare earning capacity with investment value across customers and occupations.</div>',
+    unsafe_allow_html=True
+)
+
+col1, col2 = st.columns(2, gap="large")
+
+with col1:
     fig = px.scatter(
-        filtered, x="Annual_Income", y="Investment_Value",
-        color="Age_Group", size="Investment_Value",
-        hover_data=["Customer_ID","Occupation","Credit_Score"],
+        filtered_df,
+        x="Monthly_Income",
+        y="Investment_Value",
+        color="Occupation",
+        hover_name="Customer_ID",
+        hover_data=["Annual_Income", "Investment_Percentage"],
         trendline="ols",
-        labels={"Annual_Income":"Annual Income (₹)", "Investment_Value":"Investment Value (₹)"},
         title="Income vs Investments"
     )
-    fig.update_layout(height=420, legend_title="Age Group")
-    st.plotly_chart(fig, use_container_width=True)
+    fig.update_traces(marker=dict(size=7, opacity=0.65))
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
-# ---------- TASK 3 ----------
-st.markdown('<div class="section-title">3. EMI Analysis</div>', unsafe_allow_html=True)
-a,b = st.columns([1.2,1])
+with col2:
+    occupation_investment = (
+        filtered_df
+        .groupby("Occupation")[["Annual_Income", "Investment_Value"]]
+        .mean()
+        .round(2)
+        .sort_values(by="Annual_Income", ascending=False)
+        .head(10)
+    )
 
-with a:
-    emi_by_emp = filtered.groupby("Employment_Type", as_index=False)["EMI_Per_Month"].mean()
     fig = px.bar(
-        emi_by_emp, x="Employment_Type", y="EMI_Per_Month",
-        text_auto=".2s", title="Average Monthly EMI by Employment Type",
-        labels={"EMI_Per_Month":"Average EMI (₹)", "Employment_Type":"Employment"}
+        occupation_investment.reset_index(),
+        x="Annual_Income",
+        y="Occupation",
+        orientation="h",
+        color="Investment_Value",
+        title="Top Occupations by Annual Income"
     )
-    fig.update_traces(texttemplate="₹%{y:,.0f}", textposition="outside")
-    fig.update_layout(height=380)
-    st.plotly_chart(fig, use_container_width=True)
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
-with b:
-    fig = px.box(
-        filtered, x="Employment_Type", y="EMI_Per_Month",
-        color="Employment_Type", points="outliers",
-        title="EMI Distribution"
-    )
-    fig.update_layout(height=380, showlegend=False)
-    st.plotly_chart(fig, use_container_width=True)
+st.markdown("---")
 
-# ---------- TASK 4 ----------
-st.markdown('<div class="section-title">4. Debt-to-Income Analysis</div>', unsafe_allow_html=True)
-a,b = st.columns(2)
+# ==================================================
+# 3. EMI ANALYSIS
+# ==================================================
 
-with a:
-    fig = px.histogram(
-        filtered, x="Debt_To_Income_Ratio", nbins=25,
-        marginal="box", title="Debt-to-Income Ratio Distribution",
-        labels={"Debt_To_Income_Ratio":"DTI Ratio"}
-    )
-    fig.update_xaxes(tickformat=".0%")
-    fig.update_layout(height=400)
-    st.plotly_chart(fig, use_container_width=True)
-
-with b:
-    # DTI risk bands for financial interpretation
-    temp = filtered.copy()
-    temp["DTI_Band"] = pd.cut(
-        temp["Debt_To_Income_Ratio"],
-        bins=[-np.inf, .20, .35, .50, np.inf],
-        labels=["Low (<20%)","Moderate (20–35%)","High (35–50%)","Very High (>50%)"]
-    )
-    dti = temp["DTI_Band"].value_counts().reindex(
-        ["Low (<20%)","Moderate (20–35%)","High (35–50%)","Very High (>50%)"]
-    ).fillna(0).reset_index()
-    dti.columns = ["DTI_Band","Customers"]
-    fig = px.bar(
-        dti, x="DTI_Band", y="Customers", text_auto=True,
-        title="Customers by DTI Risk Band"
-    )
-    fig.update_layout(height=400, xaxis_title="", yaxis_title="Customers")
-    st.plotly_chart(fig, use_container_width=True)
-
-# ---------- TASK 5 ----------
-st.markdown('<div class="section-title">5. Credit Utilization Analysis</div>', unsafe_allow_html=True)
-a,b = st.columns([1,1.2])
-
-with a:
-    utilization = filtered["Credit_Utilization"].mean()
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=utilization,
-        number={"suffix":"%"},
-        title={"text":"Average Credit Utilization"},
-        gauge={
-            "axis":{"range":[0,100]},
-            "threshold":{"line":{"width":4},"value":80},
-            "steps":[
-                {"range":[0,30],"name":"Low"},
-                {"range":[30,70],"name":"Moderate"},
-                {"range":[70,100],"name":"High"}
-            ]
-        }
-    ))
-    fig.update_layout(height=400)
-    st.plotly_chart(fig, use_container_width=True)
-
-with b:
-    fig = px.scatter(
-        filtered, x="Credit_Utilization", y="Credit_Score",
-        size="Credit_Limit", color="Debt_To_Income_Ratio",
-        hover_data=["Customer_ID","Existing_Credit_Limit","Loan_Count"],
-        title="Credit Utilization vs Credit Score",
-        labels={
-            "Credit_Utilization":"Credit Utilization (%)",
-            "Credit_Score":"Credit Score",
-            "Debt_To_Income_Ratio":"DTI"
-        }
-    )
-    fig.update_layout(height=400)
-    st.plotly_chart(fig, use_container_width=True)
-
-# ---------- TASK 6 ----------
-st.markdown('<div class="section-title">6. Existing Credit Limit Analysis</div>', unsafe_allow_html=True)
-a,b = st.columns(2)
-
-with a:
-    fig = px.scatter(
-        filtered, x="Existing_Credit_Limit", y="Credit_Limit",
-        color="Credit_Score", size="Annual_Income",
-        hover_data=["Customer_ID","Occupation","Credit_Utilization"],
-        trendline="ols",
-        title="Existing Credit Limit vs Current Credit Limit",
-        labels={"Existing_Credit_Limit":"Existing Credit Limit (₹)",
-                "Credit_Limit":"Credit Limit (₹)"}
-    )
-    fig.update_layout(height=420)
-    st.plotly_chart(fig, use_container_width=True)
-
-with b:
-    emp_limit = filtered.groupby("Employment_Type", as_index=False).agg(
-        Existing_Limit=("Existing_Credit_Limit","mean"),
-        Credit_Limit=("Credit_Limit","mean")
-    )
-    long_limit = emp_limit.melt(
-        id_vars="Employment_Type",
-        value_vars=["Existing_Limit","Credit_Limit"],
-        var_name="Limit_Type", value_name="Average_Limit"
-    )
-    fig = px.bar(
-        long_limit, x="Employment_Type", y="Average_Limit",
-        color="Limit_Type", barmode="group",
-        text_auto=".2s", title="Average Credit Limits by Employment Type",
-        labels={"Average_Limit":"Average Limit (₹)"}
-    )
-    fig.update_layout(height=420)
-    st.plotly_chart(fig, use_container_width=True)
-
-# ---------- TASK 7 ----------
-st.markdown('<div class="section-title">7. Loan Portfolio Analysis</div>', unsafe_allow_html=True)
-a,b = st.columns([1,1.25])
-
-with a:
-    loan_portfolio = filtered.groupby("Loan_Count").size().reset_index(name="Customers")
-    fig = px.pie(
-        loan_portfolio, names="Loan_Count", values="Customers",
-        hole=.55, title="Customer Distribution by Loan Count"
-    )
-    fig.update_traces(textposition="inside", textinfo="percent+label")
-    fig.update_layout(height=420)
-    st.plotly_chart(fig, use_container_width=True)
-
-with b:
-    loan_summary = filtered.groupby("Loan_Count", as_index=False).agg(
-        Customers=("Customer_ID","count"),
-        Avg_EMI=("EMI_Per_Month","mean"),
-        Avg_DTI=("Debt_To_Income_Ratio","mean"),
-        Avg_Credit_Utilization=("Credit_Utilization","mean")
-    )
-    fig = px.bar(
-        loan_summary, x="Loan_Count", y="Customers",
-        color="Avg_DTI", text="Customers",
-        title="Loan Count vs Customer Volume",
-        labels={"Loan_Count":"Number of Loans","Customers":"Customers","Avg_DTI":"Avg DTI"}
-    )
-    fig.update_layout(height=420)
-    st.plotly_chart(fig, use_container_width=True)
-
-# ---------- FINANCIAL INSIGHTS ----------
-st.markdown('<div class="section-title">💡 Financial Performance Insights</div>', unsafe_allow_html=True)
-
-avg_income = filtered["Annual_Income"].mean()
-avg_savings = filtered["Savings_Balance"].mean()
-avg_invest = filtered["Investment_Value"].mean()
-avg_emi = filtered["EMI_Per_Month"].mean()
-avg_dti = filtered["Debt_To_Income_Ratio"].mean()
-avg_util = filtered["Credit_Utilization"].mean()
-
-savings_rate = avg_savings / avg_income if avg_income else 0
-investment_rate = avg_invest / avg_income if avg_income else 0
-
-insights = [
-    f"**Savings position:** Average savings are {money(avg_savings)}, approximately {savings_rate*100:.1f}% of average annual income.",
-    f"**Investment position:** Average investment value is {money(avg_invest)}, around {investment_rate*100:.1f}% of average annual income.",
-    f"**Debt burden:** Average DTI is {avg_dti*100:.1f}%. Higher DTI indicates a larger portion of income is committed to debt obligations.",
-    f"**Credit usage:** Average credit utilization is {avg_util:.1f}%. Customers with high utilization deserve closer financial monitoring.",
-    f"**EMI burden:** Average monthly EMI is {money(avg_emi)}; compare EMI with income when evaluating repayment capacity.",
-    f"**Loan portfolio:** Customers hold an average of {filtered['Loan_Count'].mean():.2f} loans, helping identify segments with heavier borrowing exposure."
-]
-for text in insights:
-    st.markdown(f'<div class="insight-box">📌 {text}</div>', unsafe_allow_html=True)
-
-# ---------- DOWNLOAD FILTERED DATA ----------
-st.markdown('<div class="section-title">Filtered Financial Data</div>', unsafe_allow_html=True)
-st.dataframe(
-    filtered[[
-        "Customer_ID","Annual_Income","Savings_Balance","Investment_Value",
-        "EMI_Per_Month","Debt_To_Income_Ratio","Credit_Utilization",
-        "Existing_Credit_Limit","Credit_Limit","Loan_Count"
-    ]].reset_index(drop=True),
-    use_container_width=True, height=300
+st.header("03  EMI Analysis")
+st.markdown(
+    '<div class="section-text">Analyse monthly repayment distribution and average EMI across employment types.</div>',
+    unsafe_allow_html=True
 )
 
-csv = filtered.to_csv(index=False).encode("utf-8")
+col1, col2 = st.columns(2, gap="large")
+
+with col1:
+    fig = px.histogram(
+        filtered_df,
+        x="EMI_Per_Month",
+        nbins=30,
+        marginal="box",
+        title="Monthly EMI Distribution"
+    )
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+with col2:
+    emi_emp = (
+        filtered_df
+        .groupby("Employment_Type")["EMI_Per_Month"]
+        .mean()
+        .sort_values(ascending=False)
+        .reset_index()
+    )
+
+    fig = px.bar(
+        emi_emp,
+        x="Employment_Type",
+        y="EMI_Per_Month",
+        text_auto=".2s",
+        title="Average EMI by Employment Type"
+    )
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+st.markdown("---")
+
+# ==================================================
+# 4. DEBT TO INCOME ANALYSIS
+# ==================================================
+
+st.header("04  Debt-to-Income Analysis")
+st.markdown(
+    '<div class="section-text">Measure the proportion of income committed to debt obligations.</div>',
+    unsafe_allow_html=True
+)
+
+col1, col2 = st.columns(2, gap="large")
+
+with col1:
+    fig = px.box(
+        filtered_df,
+        y="Debt_To_Income_Ratio",
+        points="outliers",
+        title="Debt-to-Income Ratio"
+    )
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+with col2:
+    dti_emp = (
+        filtered_df
+        .groupby("Employment_Type")["Debt_To_Income_Ratio"]
+        .mean()
+        .sort_values(ascending=False)
+        .reset_index()
+    )
+
+    fig = px.bar(
+        dti_emp,
+        x="Debt_To_Income_Ratio",
+        y="Employment_Type",
+        orientation="h",
+        text_auto=".2f",
+        title="Average DTI by Employment Type"
+    )
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+st.markdown("---")
+
+# ==================================================
+# 5. CREDIT UTILIZATION
+# ==================================================
+
+st.header("05  Credit Utilization Analysis")
+st.markdown(
+    '<div class="section-text">Understand how heavily customers are using their available credit.</div>',
+    unsafe_allow_html=True
+)
+
+col1, col2 = st.columns(2, gap="large")
+
+with col1:
+    fig = px.histogram(
+        filtered_df,
+        x="Credit_Utilization",
+        nbins=20,
+        marginal="box",
+        title="Credit Utilization"
+    )
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+with col2:
+    occupation_credit = (
+        filtered_df
+        .groupby("Occupation")["Credit_Utilization"]
+        .mean()
+        .sort_values(ascending=False)
+        .head(10)
+        .sort_values()
+        .reset_index()
+    )
+
+    fig = px.bar(
+        occupation_credit,
+        x="Credit_Utilization",
+        y="Occupation",
+        orientation="h",
+        text_auto=".1f",
+        title="Credit Utilization by Occupation"
+    )
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+st.markdown("---")
+
+# ==================================================
+# 6. EXISTING CREDIT LIMIT
+# ==================================================
+
+st.header("06  Existing Credit Limit Analysis")
+st.markdown(
+    '<div class="section-text">Analyse credit capacity and compare average limits across employment groups.</div>',
+    unsafe_allow_html=True
+)
+
+col1, col2 = st.columns(2, gap="large")
+
+with col1:
+    fig = px.histogram(
+        filtered_df,
+        x="Existing_Credit_Limit",
+        nbins=30,
+        title="Existing Credit Limit"
+    )
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+with col2:
+    credit_emp = (
+        filtered_df
+        .groupby("Employment_Type")["Existing_Credit_Limit"]
+        .mean()
+        .sort_values(ascending=False)
+        .reset_index()
+    )
+
+    fig = px.bar(
+        credit_emp,
+        x="Employment_Type",
+        y="Existing_Credit_Limit",
+        text_auto=".2s",
+        title="Average Credit Limit by Employment Type"
+    )
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+st.markdown("---")
+
+# ==================================================
+# 7. LOAN PORTFOLIO
+# ==================================================
+
+st.header("07  Loan Portfolio Analysis")
+st.markdown(
+    '<div class="section-text">See how customers are distributed by number of loans and how their financial profile changes.</div>',
+    unsafe_allow_html=True
+)
+
+col1, col2 = st.columns(2, gap="large")
+
+with col1:
+    loan_counts = (
+        filtered_df["Loan_Count"]
+        .value_counts()
+        .sort_index()
+        .reset_index()
+    )
+    loan_counts.columns = ["Loan_Count", "Customers"]
+
+    fig = px.bar(
+        loan_counts,
+        x="Loan_Count",
+        y="Customers",
+        text="Customers",
+        title="Loan Portfolio"
+    )
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+with col2:
+    loan_analysis = (
+        filtered_df
+        .groupby("Loan_Count")[["Annual_Income", "Credit_Score"]]
+        .mean()
+        .round(2)
+        .reset_index()
+    )
+
+    fig = px.line(
+        loan_analysis,
+        x="Loan_Count",
+        y=["Annual_Income", "Credit_Score"],
+        markers=True,
+        title="Loan Count vs Financial Profile"
+    )
+    chart_style(fig)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+# ==================================================
+# CORRELATION ANALYSIS
+# ==================================================
+
+st.header("Financial Correlation Analysis")
+st.markdown(
+    '<div class="section-text">Explore relationships between the major financial variables.</div>',
+    unsafe_allow_html=True
+)
+
+corr_columns = [
+    "Monthly_Income",
+    "Annual_Income",
+    "Savings_Balance",
+    "Investment_Value",
+    "EMI_Per_Month",
+    "Debt_To_Income_Ratio",
+    "Credit_Utilization",
+    "Existing_Credit_Limit",
+    "Loan_Count",
+    "Credit_Score"
+]
+
+corr = filtered_df[corr_columns].corr()
+
+fig = px.imshow(
+    corr,
+    text_auto=".2f",
+    aspect="auto",
+    color_continuous_scale="Viridis",
+    title="Financial Correlation Matrix"
+)
+
+fig.update_layout(
+    height=620,
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    font=dict(family="DM Sans", size=11, color="#505a56"),
+    margin=dict(l=50, r=30, t=60, b=40)
+)
+
+st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+# ==================================================
+# KPI REPORT
+# ==================================================
+
+st.header("Financial Performance Report")
+
+kpi = {
+    "Total Customers":
+        filtered_df["Customer_ID"].nunique(),
+
+    "Average Monthly Income":
+        filtered_df["Monthly_Income"].mean(),
+
+    "Total Savings":
+        filtered_df["Savings_Balance"].sum(),
+
+    "Average Savings":
+        filtered_df["Savings_Balance"].mean(),
+
+    "Total Investments":
+        filtered_df["Investment_Value"].sum(),
+
+    "Average EMI":
+        filtered_df["EMI_Per_Month"].mean(),
+
+    "Average Debt To Income":
+        filtered_df["Debt_To_Income_Ratio"].mean(),
+
+    "Average Credit Utilization":
+        filtered_df["Credit_Utilization"].mean(),
+
+    "Average Credit Score":
+        filtered_df["Credit_Score"].mean(),
+
+    "Average Existing Credit Limit":
+        filtered_df["Existing_Credit_Limit"].mean()
+}
+
+kpi_report = pd.DataFrame(
+    kpi.items(),
+    columns=["KPI", "Value"]
+)
+
+st.dataframe(
+    kpi_report.round(2),
+    use_container_width=True
+)
+
+
+# ==================================================
+# DOWNLOAD
+# ==================================================
+
+st.header("Download Analysis Data")
+
+csv = filtered_df.to_csv(index=False)
+
 st.download_button(
-    "⬇️ Download Filtered Financial Data",
+    label="Download Filtered Data",
     data=csv,
-    file_name="financial_analysis_filtered_data.csv",
+    file_name="financial_analysis.csv",
     mime="text/csv"
 )
-
-st.caption("Financial Performance Analysis Dashboard | Built with Streamlit + Plotly")
