@@ -557,55 +557,132 @@ if view == "Financial Overview":
     st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
 
     # Income vs Savings
-    c1, c2, c3 = st.columns(3, gap="medium")
 
-    with c1:
-        st.markdown(
-            '<div class="chart-title">Income vs Savings</div>'
-            '<div class="chart-note">Savings behaviour relative to monthly income</div>',
-            unsafe_allow_html=True
-        )
+c1, c2, c3 = st.columns(3, gap="medium")
 
-        fig = px.scatter(
-            filtered_df,
-            x="Monthly_Income",
-            y="Savings_Balance",
-            color="Employment_Type",
-            hover_name="Customer_ID",
-            hover_data={
-                "Monthly_Income": ":,.0f",
-                "Savings_Balance": ":,.0f",
-                "Savings_Percentage": ":.1f",
-                "Employment_Type": True
-            }
-        )
-        fig.update_traces(marker=dict(size=6, opacity=.72))
-        dark_chart(fig)
-        st.plotly_chart(fig, use_container_width=True, config=CONFIG)
+with c1:
+    st.markdown(
+        '<div class="chart-title">Income vs Savings</div>'
+        '<div class="chart-note">Savings behaviour relative to monthly income</div>',
+        unsafe_allow_html=True
+    )
 
-    # Income vs Investments
-    with c2:
-        st.markdown(
-            '<div class="chart-title">Income vs Investments</div>'
-            '<div class="chart-note">Investment value compared with earning capacity</div>',
-            unsafe_allow_html=True
-        )
+    fig = px.scatter(
+        filtered_df,
+        x="Monthly_Income",
+        y="Savings_Balance",
+        color="Employment_Type",
+        hover_name="Customer_ID",
+        hover_data={
+            "Monthly_Income": ":,.0f",
+            "Savings_Balance": ":,.0f",
+            "Savings_Percentage": ":.1f",
+            "Employment_Type": True
+        }
+    )
 
-        fig = px.scatter(
-            filtered_df,
-            x="Monthly_Income",
-            y="Investment_Value",
-            color="Occupation",
-            hover_name="Customer_ID",
-            hover_data={
-                "Monthly_Income": ":,.0f",
-                "Investment_Value": ":,.0f",
-                "Investment_Percentage": ":.1f"
-            }
+    fig.update_traces(
+        marker=dict(
+            size=6,
+            opacity=.72
         )
-        fig.update_traces(marker=dict(size=6, opacity=.65))
-        dark_chart(fig)
-        st.plotly_chart(fig, use_container_width=True, config=CONFIG)
+    )
+
+    # Right-side dark legend
+    fig.update_layout(
+        legend=dict(
+            orientation="v",
+            x=1.02,
+            y=0.5,
+            xanchor="left",
+            yanchor="middle",
+            bgcolor="rgba(20,25,32,0.95)",
+            bordercolor="#343b46",
+            borderwidth=1,
+            font=dict(
+                family="DM Sans",
+                size=10,
+                color="#cbd3d9"
+            )
+        ),
+        margin=dict(
+            l=50,
+            r=125,
+            t=25,
+            b=45
+        )
+    )
+
+    dark_chart(fig)
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config=CONFIG
+    )
+
+
+# Income vs Investments
+with c2:
+
+    st.markdown(
+        '<div class="chart-title">Income vs Investments</div>'
+        '<div class="chart-note">Investment value compared with earning capacity</div>',
+        unsafe_allow_html=True
+    )
+
+    fig = px.scatter(
+        filtered_df,
+        x="Monthly_Income",
+        y="Investment_Value",
+        color="Occupation",
+        hover_name="Customer_ID",
+        hover_data={
+            "Monthly_Income": ":,.0f",
+            "Investment_Value": ":,.0f",
+            "Investment_Percentage": ":.1f"
+        }
+    )
+
+    fig.update_traces(
+        marker=dict(
+            size=6,
+            opacity=.65
+        )
+    )
+
+    # Right-side dark legend
+    fig.update_layout(
+        legend=dict(
+            orientation="v",
+            x=1.02,
+            y=0.5,
+            xanchor="left",
+            yanchor="middle",
+            bgcolor="rgba(20,25,32,0.95)",
+            bordercolor="#343b46",
+            borderwidth=1,
+            font=dict(
+                family="DM Sans",
+                size=9,
+                color="#cbd3d9"
+            )
+        ),
+        margin=dict(
+            l=50,
+            r=145,
+            t=25,
+            b=45
+        )
+    )
+
+    dark_chart(fig)
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config=CONFIG
+    )
 
     # Loan Portfolio
     with c3:
